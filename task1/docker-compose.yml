@@ -1,0 +1,17 @@
+version: "3"
+
+services:
+
+  ab-task1:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - ab-task1-websocket
+    volumes:
+    - ./files/keystore.jks:/opt/edgger/keystore.jks:Z
+
+  ab-task1-websocket:
+    build: ./files/
+    ports:
+      - "8100:8100"

@@ -1,0 +1,22 @@
+version: '3'
+services:
+
+  ab-db:
+    image: docker.io/postgres:10.9-alpine
+    container_name: db
+    restart: always
+    ports:
+      - 5432:5432
+    environment:
+      POSTGRES_DB: alfa_battle
+      POSTGRES_USER: alfa_battle
+      POSTGRES_PASSWORD: qwe123
+    volumes:
+      - ./init_db.sql:/docker-entrypoint-initdb.d/init_db.sql:Z
+
+  ab-task3:
+    build: .
+    ports:
+      - "8082:8082"
+    depends_on:
+      - ab-db

@@ -1,0 +1,81 @@
+version: '3'
+
+services:
+
+  #https://docs.confluent.io/current/quickstart/ce-docker-quickstart.html
+  #https://docs.confluent.io/current/installation/versions-interoperability.html
+  #Confluent Platform: 5.5.x = Apache Kafka: 2.5.x
+
+  ab-kafka:
+    image: confluentinc/cp-kafka:5.5.1
+    hostname: kafka
+    container_name: ab-kafka
+    depends_on:
+      - ab-zookeeper
+    ports:
+      - 9092:9092
+      - 29092:29092
+      - 29094:29094
+    environment:
+      KAFKA_BROKER_ID: 1
+      KAFKA_ZOOKEEPER_CONNECT: ab-zookeeper:2181
+      # Whether or not to auto create topics when data is published for the first time to a topic
+      #KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
+      # The KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR is set to 1 for a single-node cluster. Unless you have three or more
+      # nodes you do not need to change this from the default.
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_GROUP_INITIAL_REBALANCE_DELAY_MS: 0
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      #listeners, and the host/ip and port to which Kafka binds to on which to listen. The default is 0.0.0.0
+      KAFKA_LISTENERS: LISTENER_CONTAINERS://:29092,LISTENER_HOST://:9092,LISTENER_EXTERNAL://:29094
+      #listeners with their the host/ip and port. This is the metadata that’s passed back to clients.
+      KAFKA_ADVERTISED_LISTENERS: LISTENER_CONTAINERS://kafka:29092,LISTENER_HOST://localhost:9092,LISTENER_EXTERNAL://${EXTERNAL_IP}:29094
+      #key/value pairs for the security protocol to use, per listener name.
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: LISTENER_CONTAINERS:PLAINTEXT,LISTENER_HOST:PLAINTEXT,LISTENER_EXTERNAL:PLAINTEXT
+      #which listener to use Kafka brokers to communicate between themselves. The host/IP used must be accessible from the broker machine to others.
+      KAFKA_INTER_BROKER_LISTENER_NAME: LISTENER_CONTAINERS
+      KAFKA_DEFAULT_REPLICATION_FACTOR: 1
+      KAFKA_NUM_PARTITIONS: 3
+
+  #https://rmoff.net/2018/08/02/kafka-listeners-explained/
+  #When you run a client, the broker you pass to it is just where it’s going to go and get the metadata about brokers in the cluster from.
+  #The actual host & IP that it will connect to for reading/writing data is based on the data that the broker passes back in that initial connection.
+
+
+  #docker-compose exec ab-kafkacat kafkacat -b ab-kafka:9092 -L
+  ab-kafkacat:
+    container_name: ab-kafkacat
+    image: confluentinc/cp-kafkacat:5.5.1
+    command: sleep infinity
+
+  #  ab-schema-registry:
+  #    image: confluentinc/cp-schema-registry:5.5.1
+  #    hostname: schema-registry
+  #    container_name: ab-schema-registry
+  #    environment:
+  #      SCHEMA_REGISTRY_KAFKASTORE_BOOTSTRAP_SERVERS: "ab-kafka:29092"
+  #      SCHEMA_REGISTRY_HOST_NAME: schema-registry
+  #      SCHEMA_REGISTRY_LISTENERS: "http://0.0.0.0:8081"
+  #    ports:
+  #      - 8081:8081
+  #    depends_on:
+  #      - zookeeper
+
+  ab-zookeeper:
+    image: confluentinc/cp-zookeeper:5.5.1
+    hostname: zookeeper
+    container_name: ab-zookeeper
+    ports:
+      - 2181:2181
+    environment:
+      ZOOKEEPER_SERVER_ID: 1
+      ZOOKEEPER_CLIENT_PORT: 2181
+      ZOOKEEPER_TICK_TIME: 2000
+
+#  ab-task2:
+#    build: .
+#    ports:
+#      - 8081:8081
+#    depends_on:
+#      - ab-kafka
